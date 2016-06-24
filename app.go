@@ -1,24 +1,21 @@
 package main
 
 import (
+	"fmt"
+	"github.com/Financial-Times/go-fthealth/v1a"
+	"github.com/Financial-Times/http-handlers-go/httphandlers"
+	status "github.com/Financial-Times/service-status-go/httphandlers"
 	log "github.com/Sirupsen/logrus"
+	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
+	"github.com/rcrowley/go-metrics"
+	"net/http"
 	"os"
 )
-
-func init() {
-	log.SetFormatter(new(log.JSONFormatter))
-}
 
 func main() {
 	app := cli.App("curated-authors-transformer", "A RESTful API for transforming Bertha Curated Authors to UP People JSON")
 
-	baseURL := app.String(cli.StringOpt{
-		Name:   "base-url",
-		Value:  "http://localhost:8080/transformers/curated-authors/",
-		Desc:   "Base url",
-		EnvVar: "BASE_URL",
-	})
 	port := app.Int(cli.IntOpt{
 		Name:   "port",
 		Value:  8080,
@@ -34,10 +31,31 @@ func main() {
 
 	app.Action = func() {
 		log.Info("App started!!!")
-		log.Info(*baseURL)
-		log.Info(*port)
-		log.Info(*berthaSrcUrl)
+		bs := newBerthaService(*berthaSrcUrl)
+		ah := newAuthorHandler(bs)
+		h := setupServiceHandlers(ah)
+
+		log.Printf("listening on %d", *port)
+		http.ListenAndServe(fmt.Sprintf(":%d", *port),
+			httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry,
+				httphandlers.TransactionAwareRequestLoggingHandler(log.StandardLogger(), h)))
+
 	}
 
 	app.Run(os.Args)
+}
+
+func setupServiceHandlers(ah authorHandler) (r *mux.Router) {
+	r = mux.NewRouter()
+	r.HandleFunc(status.PingPath, status.PingHandler)
+	r.HandleFunc(status.PingPathDW, status.PingHandler)
+	r.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
+	r.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
+	r.HandleFunc("/__health", v1a.Handler("Topics Transformer Healthchecks", "Checks for accessing TME", ah.HealthCheck()))
+	r.HandleFunc("/__gtg", ah.GoodToGo)
+
+	r.HandleFunc("/transformers/people", ah.getAuthors).Methods("GET")
+	//	r.HandleFunc("/transformers/topics/{uuid}", ah.getTopicByUUID).Methods("GET")
+
+	return
 }
