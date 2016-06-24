@@ -21,8 +21,17 @@ func (ah *authorHandler) getAuthors(writer http.ResponseWriter, req *http.Reques
 	if err != nil {
 		writeJSONError(writer, err.Error(), http.StatusInternalServerError)
 	}
-	fmt.Println(berthaAuthors)
 	writeJSONResponse(berthaAuthors, len(berthaAuthors) > 0, writer)
+}
+
+func (ah *authorHandler) getAuthorByUuid(writer http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	uuid := vars["uuid"]
+	berthaAuthor, err := ah.berthaService.getBerthaAuthorByUuid(uuid)
+	if err != nil {
+		writeJSONError(writer, err.Error(), http.StatusInternalServerError)
+	}
+	writeJSONResponse(berthaAuthor, berthaAuthor != nil, writer)
 }
 
 func (ah *authorHandler) HealthCheck() v1a.Check {

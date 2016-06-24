@@ -36,6 +36,19 @@ func (bs *berthaService) getBerthaAuthors() ([]berthaAuthor, error) {
 	return authors, nil
 }
 
+func (bs *berthaService) getBerthaAuthorsByUuid(uuid string) (berthaAuthor, error) {
+	authors, err := getBerthaAuthors()
+	if err != nil {
+		return nil, err
+	}
+	for _, author := range authors {
+		if author.Uuid == uuid {
+			return author, nil
+		}
+	}
+	return nil, nil
+}
+
 func (bs *berthaService) callBerthaService() (*http.Response, error) {
 	return client.Get(bs.berthaUrl)
 }

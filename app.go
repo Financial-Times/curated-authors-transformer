@@ -55,7 +55,7 @@ func setupServiceHandlers(ah authorHandler) (r *mux.Router) {
 	r.HandleFunc("/__gtg", ah.GoodToGo)
 
 	r.HandleFunc("/transformers/people", ah.getAuthors).Methods("GET")
-	//	r.HandleFunc("/transformers/topics/{uuid}", ah.getTopicByUUID).Methods("GET")
+	r.HandleFunc("/transformers/people/{uuid}", ah.getAuthorByUuid).Methods("GET")
 
 	return
 }
