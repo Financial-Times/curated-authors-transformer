@@ -1,37 +1,37 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/Financial-Times/go-fthealth/v1a"
 	log "github.com/Sirupsen/logrus"
+	"github.com/gorilla/mux"
 	"net/http"
 )
 
 type authorHandler struct {
-	berthaService berthaService
+	authorsService authorsService
 }
 
-func newAuthorHandler(bs berthaService) authorHandler {
-	return authorHandler{berthaService: bs}
+func newAuthorHandler(as authorsService) authorHandler {
+	return authorHandler{authorsService: as}
 }
 
-func (ah *authorHandler) getAuthors(writer http.ResponseWriter, req *http.Request) {
-	berthaAuthors, err := ah.berthaService.getBerthaAuthors()
+func (ah *authorHandler) getAuthorsUuids(writer http.ResponseWriter, req *http.Request) {
+	uuids, err := ah.authorsService.getAuthorsUuids()
 	if err != nil {
 		writeJSONError(writer, err.Error(), http.StatusInternalServerError)
 	}
-	writeJSONResponse(berthaAuthors, len(berthaAuthors) > 0, writer)
+	writeStreamResponse(uuids, writer)
 }
 
 func (ah *authorHandler) getAuthorByUuid(writer http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	uuid := vars["uuid"]
-	berthaAuthor, err := ah.berthaService.getBerthaAuthorByUuid(uuid)
-	if err != nil {
-		writeJSONError(writer, err.Error(), http.StatusInternalServerError)
-	}
-	writeJSONResponse(berthaAuthor, berthaAuthor != nil, writer)
+	fmt.Println(uuid)
+	a := ah.authorsService.getAuthorByUuid(uuid)
+	writeJSONResponse(a, a != author{}, writer)
 }
 
 func (ah *authorHandler) HealthCheck() v1a.Check {
@@ -46,7 +46,7 @@ func (ah *authorHandler) HealthCheck() v1a.Check {
 }
 
 func (ah *authorHandler) checker() (string, error) {
-	err := ah.berthaService.checkConnectivity()
+	err := ah.authorsService.checkConnectivity()
 	if err == nil {
 		return "Connectivity to Bertha is ok", err
 	}
@@ -78,4 +78,14 @@ func writeJSONResponse(obj interface{}, found bool, writer http.ResponseWriter) 
 func writeJSONError(w http.ResponseWriter, errorMsg string, statusCode int) {
 	w.WriteHeader(statusCode)
 	fmt.Fprintln(w, fmt.Sprintf("{\"message\": \"%s\"}", errorMsg))
+}
+
+func writeStreamResponse(ids []string, writer http.ResponseWriter) {
+	var buffer bytes.Buffer
+
+	for _, id := range ids {
+		buffer.WriteString(fmt.Sprintf(`{"id":"%s"} `, id))
+	}
+
+	buffer.WriteTo(writer)
 }

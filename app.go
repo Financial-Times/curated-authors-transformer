@@ -31,7 +31,7 @@ func main() {
 
 	app.Action = func() {
 		log.Info("App started!!!")
-		bs := newBerthaService(*berthaSrcUrl)
+		bs := &berthaService{berthaUrl: *berthaSrcUrl}
 		ah := newAuthorHandler(bs)
 		h := setupServiceHandlers(ah)
 
@@ -54,8 +54,8 @@ func setupServiceHandlers(ah authorHandler) (r *mux.Router) {
 	r.HandleFunc("/__health", v1a.Handler("Topics Transformer Healthchecks", "Checks for accessing TME", ah.HealthCheck()))
 	r.HandleFunc("/__gtg", ah.GoodToGo)
 
-	r.HandleFunc("/transformers/people", ah.getAuthors).Methods("GET")
-	r.HandleFunc("/transformers/people/{uuid}", ah.getAuthorByUuid).Methods("GET")
+	r.HandleFunc("/transformers/authors/__ids", ah.getAuthorsUuids).Methods("GET")
+	r.HandleFunc("/transformers/authors/{uuid}", ah.getAuthorByUuid).Methods("GET")
 
 	return
 }
