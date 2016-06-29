@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/jaytaylor/html2text"
 )
 
@@ -30,6 +29,5 @@ func (bt *berthaTransformer) authorToPerson(a author) (person, error) {
 		Identifiers:    identifiers,
 	}
 
-	fmt.Println(p.DescriptionXML)
 	return p, err
 }

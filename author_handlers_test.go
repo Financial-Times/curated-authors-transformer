@@ -24,8 +24,8 @@ var transformedMartinWolf = person{
 	EmailAddress:   "martin.wolf@ft.com",
 	TwitterHandle:  "@martinwolf_",
 	Description:    "Martin Wolf is chief economics commentator at the Financial Times, London.",
-	DescriptionXML: `<p>Martin Wolf is chief economics commentator at the Financial Times, London.<p>`,
-	ImageUrl:       "https://upload.wikimedia.org/wikipedia/en/7/77/EricCartman.png",
+	DescriptionXML: `<p>Martin Wolf is chief economics commentator at the Financial Times, London.</p>`,
+	ImageUrl:       "https://next-geebee.ft.com/image/v1/images/raw/fthead:martin-wolf?source=next",
 	Identifiers:    []identifier{martinWolfIdentifier},
 }
 
