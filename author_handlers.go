@@ -12,10 +12,14 @@ import (
 
 type authorHandler struct {
 	authorsService authorsService
+	transformer    transformer
 }
 
 func newAuthorHandler(as authorsService) authorHandler {
-	return authorHandler{authorsService: as}
+	return authorHandler{
+		authorsService: as,
+		transformer:    &berthaTransformer{},
+	}
 }
 
 func (ah *authorHandler) getAuthorsUuids(writer http.ResponseWriter, req *http.Request) {
@@ -29,9 +33,13 @@ func (ah *authorHandler) getAuthorsUuids(writer http.ResponseWriter, req *http.R
 func (ah *authorHandler) getAuthorByUuid(writer http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	uuid := vars["uuid"]
-	fmt.Println(uuid)
+
 	a := ah.authorsService.getAuthorByUuid(uuid)
-	writeJSONResponse(a, a != author{}, writer)
+	p, err := ah.transformer.authorToPerson(a)
+	if err != nil {
+		writeJSONError(writer, err.Error(), http.StatusInternalServerError)
+	}
+	writeJSONResponse(p, a != author{}, writer)
 }
 
 func (ah *authorHandler) HealthCheck() v1a.Check {
@@ -59,7 +67,7 @@ func (ah *authorHandler) GoodToGo(writer http.ResponseWriter, req *http.Request)
 	}
 }
 
-func writeJSONResponse(obj interface{}, found bool, writer http.ResponseWriter) {
+func writeJSONResponse(p person, found bool, writer http.ResponseWriter) {
 	writer.Header().Add("Content-Type", "application/json")
 
 	if !found {
@@ -68,7 +76,7 @@ func writeJSONResponse(obj interface{}, found bool, writer http.ResponseWriter) 
 	}
 
 	enc := json.NewEncoder(writer)
-	if err := enc.Encode(obj); err != nil {
+	if err := enc.Encode(p); err != nil {
 		log.Errorf("Error on json encoding=%v\n", err)
 		writeJSONError(writer, err.Error(), http.StatusInternalServerError)
 		return

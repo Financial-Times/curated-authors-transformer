@@ -7,12 +7,27 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
 var curatedAuthorsTransformer *httptest.Server
 
 var uuids = []string{martinWolf.Uuid, lucyKellaway.Uuid}
+var expectedStreamOutput = `{"id":"` + martinWolf.Uuid + `"} {"id":"` + lucyKellaway.Uuid + `"} `
+
+var martinWolfIdentifier = identifier{tmeAuthority, "Q0ItMDAwMDkwMA==-QXV0aG9ycw=="}
+
+var transformedMartinWolf = person{
+	Uuid:           "daf5fed2-013c-468d-85c4-aee779b8aa53",
+	Name:           "Martin Wolf",
+	EmailAddress:   "martin.wolf@ft.com",
+	TwitterHandle:  "@martinwolf_",
+	Description:    "Martin Wolf is chief economics commentator at the Financial Times, London.",
+	DescriptionXML: `<p>Martin Wolf is chief economics commentator at the Financial Times, London.<p>`,
+	ImageUrl:       "https://upload.wikimedia.org/wikipedia/en/7/77/EricCartman.png",
+	Identifiers:    []identifier{martinWolfIdentifier},
+}
 
 type MockedBerthaService struct {
 	mock.Mock
@@ -33,8 +48,20 @@ func (m *MockedBerthaService) checkConnectivity() error {
 	return args.Error(0)
 }
 
-func startCuratedAuthorsTransformer(bs *MockedBerthaService) {
-	ah := newAuthorHandler(bs)
+type MockedTransformer struct {
+	mock.Mock
+}
+
+func (m *MockedTransformer) authorToPerson(a author) (person, error) {
+	args := m.Called(a)
+	return args.Get(0).(person), args.Error(1)
+}
+
+func startCuratedAuthorsTransformer(bs *MockedBerthaService, mt *MockedTransformer) {
+	ah := authorHandler{
+		authorsService: bs,
+		transformer:    mt,
+	}
 	h := setupServiceHandlers(ah)
 	curatedAuthorsTransformer = httptest.NewServer(h)
 }
@@ -43,7 +70,9 @@ func TestShouldReturn200AndTrasformedAuthors(t *testing.T) {
 
 	mbs := new(MockedBerthaService)
 	mbs.On("getAuthorsUuids").Return(uuids, nil)
-	startCuratedAuthorsTransformer(mbs)
+	mt := new(MockedTransformer)
+	mt.On("authorToPerson", martinWolf).Return(transformedMartinWolf, nil)
+	startCuratedAuthorsTransformer(mbs, mt)
 	defer curatedAuthorsTransformer.Close()
 
 	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/__ids")
@@ -54,14 +83,8 @@ func TestShouldReturn200AndTrasformedAuthors(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "Response status should be 200")
 
-	//TODO Implement propert test acording to expected output
-	//  file, _ := os.Open("test-resources/transformer-output.json")
-	// 	defer file.Close()
-	//
-	// 	expectedOutput := getStringFromReader(file)
-	// 	actualOutput := getStringFromReader(resp.Body)
-	//
-	// 	assert.Equal(t, expectedOutput, actualOutput, "Response body shoud be equal to transformer response body")
+	actualOutput := getStringFromReader(resp.Body)
+	assert.Equal(t, expectedStreamOutput, actualOutput, "Response body should be a sequence of ids")
 }
 
 func getStringFromReader(r io.Reader) string {
@@ -74,7 +97,9 @@ func TestShouldReturn200AndTrasformedAuthor(t *testing.T) {
 
 	mbs := new(MockedBerthaService)
 	mbs.On("getAuthorByUuid", martinWolf.Uuid).Return(martinWolf)
-	startCuratedAuthorsTransformer(mbs)
+	mt := new(MockedTransformer)
+	mt.On("authorToPerson", martinWolf).Return(transformedMartinWolf, nil)
+	startCuratedAuthorsTransformer(mbs, mt)
 	defer curatedAuthorsTransformer.Close()
 
 	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/" + martinWolf.Uuid)
@@ -85,12 +110,11 @@ func TestShouldReturn200AndTrasformedAuthor(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "Response status should be 200")
 
-	//TODO Implement propert test acording to expected output
-	//  file, _ := os.Open("test-resources/transformer-output.json")
-	// 	defer file.Close()
-	//
-	// 	expectedOutput := getStringFromReader(file)
-	// 	actualOutput := getStringFromReader(resp.Body)
-	//
-	// 	assert.Equal(t, expectedOutput, actualOutput, "Response body shoud be equal to transformer response body")
+	file, _ := os.Open("test-resources/martin-wolf-transformed-output.json")
+	defer file.Close()
+
+	expectedOutput := getStringFromReader(file)
+	actualOutput := getStringFromReader(resp.Body)
+
+	assert.Equal(t, expectedOutput, actualOutput, "Response body should be Martin Wolf")
 }
