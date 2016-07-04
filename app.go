@@ -54,6 +54,7 @@ func setupServiceHandlers(ah authorHandler) (r *mux.Router) {
 	r.HandleFunc("/__health", v1a.Handler("Topics Transformer Healthchecks", "Checks for accessing TME", ah.HealthCheck()))
 	r.HandleFunc("/__gtg", ah.GoodToGo)
 
+	r.HandleFunc("/transformers/authors/__count", ah.getAuthorsCount).Methods("GET")
 	r.HandleFunc("/transformers/authors/__ids", ah.getAuthorsUuids).Methods("GET")
 	r.HandleFunc("/transformers/authors/{uuid}", ah.getAuthorByUuid).Methods("GET")
 

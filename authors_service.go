@@ -1,7 +1,8 @@
 package main
 
 type authorsService interface {
-	getAuthorsUuids() ([]string, error)
+	getAuthorsCount() (int, error)
+	getAuthorsUuids() []string
 	getAuthorByUuid(uuid string) author
 	checkConnectivity() error
 }

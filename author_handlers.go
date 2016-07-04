@@ -22,11 +22,16 @@ func newAuthorHandler(as authorsService) authorHandler {
 	}
 }
 
-func (ah *authorHandler) getAuthorsUuids(writer http.ResponseWriter, req *http.Request) {
-	uuids, err := ah.authorsService.getAuthorsUuids()
+func (ah *authorHandler) getAuthorsCount(writer http.ResponseWriter, req *http.Request) {
+	c, err := ah.authorsService.getAuthorsCount()
 	if err != nil {
 		writeJSONError(writer, err.Error(), http.StatusInternalServerError)
 	}
+	writeJSONResponse(c, true, writer)
+}
+
+func (ah *authorHandler) getAuthorsUuids(writer http.ResponseWriter, req *http.Request) {
+	uuids := ah.authorsService.getAuthorsUuids()
 	writeStreamResponse(uuids, writer)
 }
 
@@ -67,7 +72,7 @@ func (ah *authorHandler) GoodToGo(writer http.ResponseWriter, req *http.Request)
 	}
 }
 
-func writeJSONResponse(p person, found bool, writer http.ResponseWriter) {
+func writeJSONResponse(obj interface{}, found bool, writer http.ResponseWriter) {
 	writer.Header().Add("Content-Type", "application/json")
 
 	if !found {
@@ -76,7 +81,7 @@ func writeJSONResponse(p person, found bool, writer http.ResponseWriter) {
 	}
 
 	enc := json.NewEncoder(writer)
-	if err := enc.Encode(p); err != nil {
+	if err := enc.Encode(obj); err != nil {
 		log.Errorf("Error on json encoding=%v\n", err)
 		writeJSONError(writer, err.Error(), http.StatusInternalServerError)
 		return

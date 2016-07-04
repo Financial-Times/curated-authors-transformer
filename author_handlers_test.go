@@ -34,14 +34,19 @@ type MockedBerthaService struct {
 	mock.Mock
 }
 
-func (m *MockedBerthaService) getAuthorsUuids() ([]string, error) {
+func (m *MockedBerthaService) getAuthorsUuids() []string {
 	args := m.Called()
-	return args.Get(0).([]string), args.Error(1)
+	return args.Get(0).([]string)
 }
 
 func (m *MockedBerthaService) getAuthorByUuid(uuid string) author {
 	args := m.Called(uuid)
 	return args.Get(0).(author)
+}
+
+func (m *MockedBerthaService) getAuthorsCount() (int, error) {
+	args := m.Called()
+	return args.Int(0), args.Error(1)
 }
 
 func (m *MockedBerthaService) checkConnectivity() error {
@@ -67,10 +72,30 @@ func startCuratedAuthorsTransformer(bs *MockedBerthaService, mt *MockedTransform
 	curatedAuthorsTransformer = httptest.NewServer(h)
 }
 
+func TestShouldReturn200AndAuthorsCount(t *testing.T) {
+
+	mbs := new(MockedBerthaService)
+	mbs.On("getAuthorsCount").Return(2, nil)
+	mt := new(MockedTransformer)
+	startCuratedAuthorsTransformer(mbs, mt)
+	defer curatedAuthorsTransformer.Close()
+
+	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/__count")
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "Response status should be 200")
+
+	actualOutput := getStringFromReader(resp.Body)
+	assert.Equal(t, "2\n", actualOutput, "Response body should contain the count of available authors")
+}
+
 func TestShouldReturn200AndAuthorsUuids(t *testing.T) {
 
 	mbs := new(MockedBerthaService)
-	mbs.On("getAuthorsUuids").Return(uuids, nil)
+	mbs.On("getAuthorsUuids").Return(uuids)
 	mt := new(MockedTransformer)
 	startCuratedAuthorsTransformer(mbs, mt)
 	defer curatedAuthorsTransformer.Close()
@@ -137,25 +162,22 @@ func TestShouldReturn404WhenAuthorIsNotFound(t *testing.T) {
 }
 
 func TestShouldReturn500WhenBerthaReturnsError(t *testing.T) {
-
 	mbs := new(MockedBerthaService)
-	mbs.On("getAuthorsUuids").Return([]string{}, errors.New("I am a zobie"))
+	mbs.On("getAuthorsCount").Return(-1, errors.New("I am a zobie"))
 	mt := new(MockedTransformer)
 	startCuratedAuthorsTransformer(mbs, mt)
 	defer curatedAuthorsTransformer.Close()
 
-	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/__ids")
+	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/__count")
 	if err != nil {
 		panic(err)
 	}
 	defer resp.Body.Close()
 
 	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode, "Response status should be 500")
-
 }
 
 func TestShouldReturn500WhenTransformerReturnsError(t *testing.T) {
-
 	mbs := new(MockedBerthaService)
 	mbs.On("getAuthorByUuid", martinWolf.Uuid).Return(martinWolf)
 	mt := new(MockedTransformer)
@@ -170,5 +192,4 @@ func TestShouldReturn500WhenTransformerReturnsError(t *testing.T) {
 	defer resp.Body.Close()
 
 	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode, "Response status should be 500")
-
 }

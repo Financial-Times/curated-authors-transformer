@@ -16,28 +16,33 @@ type berthaService struct {
 	authorsMap map[string]author
 }
 
-func (bs *berthaService) getAuthorsUuids() ([]string, error) {
+func (bs *berthaService) getAuthorsCount() (int, error) {
 	bs.authorsMap = make(map[string]author)
 
 	resp, err := bs.callBerthaService()
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		return -1, err
 	}
 
 	var authors []author
 	if err = json.NewDecoder(resp.Body).Decode(&authors); err != nil {
 		log.Error(err)
-		return nil, err
+		return -1, err
 	}
 
-	uuids := make([]string, len(authors))
-	for i, a := range authors {
+	for _, a := range authors {
 		bs.authorsMap[a.Uuid] = a
-		uuids[i] = a.Uuid
 	}
+	return len(bs.authorsMap), nil
+}
 
-	return uuids, nil
+func (bs *berthaService) getAuthorsUuids() []string {
+	uuids := make([]string, 0)
+	for uuid, _ := range bs.authorsMap {
+		uuids = append(uuids, uuid)
+	}
+	return uuids
 }
 
 func (bs *berthaService) getAuthorByUuid(uuid string) author {

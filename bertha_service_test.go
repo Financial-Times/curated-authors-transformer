@@ -67,17 +67,29 @@ func unhappyHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusInternalServerError)
 }
 
-func TestShouldReturnAuthors(t *testing.T) {
+func TestShouldReturnAuthorsCount(t *testing.T) {
 	startBerthaMock("happy")
 	defer berthaMock.Close()
 	spreadSheetUrl := berthaMock.URL + berthaPath
 	bs := &berthaService{berthaUrl: spreadSheetUrl}
 
-	uuids, err := bs.getAuthorsUuids()
+	c, err := bs.getAuthorsCount()
+
 	assert.Nil(t, err)
+	assert.Equal(t, 2, c, "Bertha should return 2 authors")
+}
+
+func TestShouldReturnAuthorsUuids(t *testing.T) {
+	startBerthaMock("happy")
+	defer berthaMock.Close()
+	spreadSheetUrl := berthaMock.URL + berthaPath
+	bs := &berthaService{berthaUrl: spreadSheetUrl}
+
+	bs.getAuthorsCount()
+	uuids := bs.getAuthorsUuids()
 	assert.Equal(t, 2, len(uuids), "Bertha should return 2 authors")
-	assert.Equal(t, martinWolf.Uuid, uuids[0], "First authors should be Martin Wolf")
-	assert.Equal(t, lucyKellaway.Uuid, uuids[1], "First authors should be Lucy Kellaway")
+	assert.Equal(t, true, contains(uuids, martinWolf.Uuid), "It should contain Martin Wolf's UUID")
+	assert.Equal(t, true, contains(uuids, lucyKellaway.Uuid), "It should contain Lucy Kellaway's UUID")
 }
 
 func TestShouldReturnSingleAuthor(t *testing.T) {
@@ -86,12 +98,22 @@ func TestShouldReturnSingleAuthor(t *testing.T) {
 	spreadSheetUrl := berthaMock.URL + berthaPath
 	bs := &berthaService{berthaUrl: spreadSheetUrl}
 
-	bs.getAuthorsUuids()
+	bs.getAuthorsCount()
 	a := bs.getAuthorByUuid(martinWolf.Uuid)
 	assert.Equal(t, martinWolf, a, "The author should be Martin Wolf")
 }
 
-func TestShouldReturnEmptyAuthorWhenAuthorsUuidsAreNotFetched(t *testing.T) {
+func TestShouldReturnEmptyAuthorsUuidsWhenAuthorsCountIsNotCalled(t *testing.T) {
+	startBerthaMock("happy")
+	defer berthaMock.Close()
+	spreadSheetUrl := berthaMock.URL + berthaPath
+	bs := &berthaService{berthaUrl: spreadSheetUrl}
+
+	uuids := bs.getAuthorsUuids()
+	assert.Equal(t, 0, len(uuids), "Bertha should return 0 authors")
+}
+
+func TestShouldReturnEmptyAuthorWhenAuthorsCountIsNotCalled(t *testing.T) {
 	startBerthaMock("happy")
 	defer berthaMock.Close()
 	spreadSheetUrl := berthaMock.URL + berthaPath
@@ -107,9 +129,12 @@ func TestShouldReturnErrorWhenBerthaIsUnhappy(t *testing.T) {
 	spreadSheetUrl := berthaMock.URL + berthaPath
 	bs := &berthaService{berthaUrl: spreadSheetUrl}
 
-	authors, err := bs.getAuthorsUuids()
+	c, err := bs.getAuthorsCount()
 	assert.NotNil(t, err)
-	assert.Equal(t, 0, len(authors), "Bertha should return 0 authors")
+	assert.Equal(t, -1, c, "It should return -1")
+
+	authors := bs.getAuthorsUuids()
+	assert.Equal(t, 0, len(authors), "It should return 0 authors")
 
 	a := bs.getAuthorByUuid(martinWolf.Uuid)
 	assert.Equal(t, author{}, a, "The author should be empty")
@@ -141,4 +166,13 @@ func TestCheckConnectivityBerthaOffline(t *testing.T) {
 
 	c := bs.checkConnectivity()
 	assert.NotNil(t, c)
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }
