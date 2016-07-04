@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"io"
@@ -66,12 +67,11 @@ func startCuratedAuthorsTransformer(bs *MockedBerthaService, mt *MockedTransform
 	curatedAuthorsTransformer = httptest.NewServer(h)
 }
 
-func TestShouldReturn200AndTrasformedAuthors(t *testing.T) {
+func TestShouldReturn200AndAuthorsUuids(t *testing.T) {
 
 	mbs := new(MockedBerthaService)
 	mbs.On("getAuthorsUuids").Return(uuids, nil)
 	mt := new(MockedTransformer)
-	mt.On("authorToPerson", martinWolf).Return(transformedMartinWolf, nil)
 	startCuratedAuthorsTransformer(mbs, mt)
 	defer curatedAuthorsTransformer.Close()
 
@@ -117,4 +117,58 @@ func TestShouldReturn200AndTrasformedAuthor(t *testing.T) {
 	actualOutput := getStringFromReader(resp.Body)
 
 	assert.Equal(t, expectedOutput, actualOutput, "Response body should be Martin Wolf")
+}
+
+func TestShouldReturn404WhenAuthorIsNotFound(t *testing.T) {
+	mbs := new(MockedBerthaService)
+	mbs.On("getAuthorByUuid", martinWolf.Uuid).Return(author{})
+	mt := new(MockedTransformer)
+	mt.On("authorToPerson", author{}).Return(person{}, nil)
+	startCuratedAuthorsTransformer(mbs, mt)
+	defer curatedAuthorsTransformer.Close()
+
+	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/" + martinWolf.Uuid)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode, "Response status should be 404")
+}
+
+func TestShouldReturn500WhenBerthaReturnsError(t *testing.T) {
+
+	mbs := new(MockedBerthaService)
+	mbs.On("getAuthorsUuids").Return([]string{}, errors.New("I am a zobie"))
+	mt := new(MockedTransformer)
+	startCuratedAuthorsTransformer(mbs, mt)
+	defer curatedAuthorsTransformer.Close()
+
+	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/__ids")
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode, "Response status should be 500")
+
+}
+
+func TestShouldReturn500WhenTransformerReturnsError(t *testing.T) {
+
+	mbs := new(MockedBerthaService)
+	mbs.On("getAuthorByUuid", martinWolf.Uuid).Return(martinWolf)
+	mt := new(MockedTransformer)
+	mt.On("authorToPerson", martinWolf).Return(person{}, errors.New("I hate Luca!!!"))
+	startCuratedAuthorsTransformer(mbs, mt)
+	defer curatedAuthorsTransformer.Close()
+
+	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/" + martinWolf.Uuid)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode, "Response status should be 500")
+
 }
