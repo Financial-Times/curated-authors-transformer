@@ -11,7 +11,7 @@ type person struct {
 	TwitterHandle  string       `json:"twitterHandle,omitempty"`
 	Description    string       `json:"description,omitempty"`
 	DescriptionXML string       `json:"descriptionXML,omitempty"`
-	ImageUrl       string       `json:"_imageUrl"` // TODO this is a temporary thing - needs to be integrated into images properly
+	ImageUrl       string       `json:"_imageUrl,omitempty"` // TODO this is a temporary thing - needs to be integrated into images properly
 }
 
 type identifier struct {
