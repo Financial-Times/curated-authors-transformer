@@ -25,7 +25,5 @@ RUN apk --update add git go \
   && mv curated-authors-transformer /curated-authors-transformer-app \
   && apk del go git \
   && rm -rf $GOPATH /var/cache/apk/*
-  
-EXPOSE 8080
 
 CMD exec /curated-authors-transformer-app 
