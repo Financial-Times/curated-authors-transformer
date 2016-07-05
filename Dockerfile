@@ -1,7 +1,6 @@
 FROM alpine:3.3
 
 ADD *.go .git /curated-authors-transformer/
-ADD test-resources /curated-authors-transformer/test-resources
 
 RUN apk --update add git go \
   && export GOPATH=/gopath \
@@ -19,8 +18,6 @@ RUN apk --update add git go \
   && mv * $GOPATH/src/${REPO_PATH} \
   && cd $GOPATH/src/${REPO_PATH} \
   && go get -t ./... \
-  && ls \
-  && go test ./... \
   && go build -ldflags="${LDFLAGS}" \
   && mv curated-authors-transformer /curated-authors-transformer-app \
   && apk del go git \

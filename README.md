@@ -1,6 +1,6 @@
 # curated-authors-transformer
 
-[![Circle CI](https://circleci.com/gh/Financial-Times/curated-authors-transformer/tree/master.png?style=shield)](https://circleci.com/gh/Financial-Times/curated-authors-transformer/tree/master)
+[![CircleCI](https://circleci.com/gh/Financial-Times/curated-authors-transformer.svg?style=svg)](https://circleci.com/gh/Financial-Times/curated-authors-transformer)
 
 Retrieves authors data curated by editorial people and transforms it to People according to UP json model.
 The authors data is specified by a Google spreadsheet which is accessible through Bertha APIs ()
