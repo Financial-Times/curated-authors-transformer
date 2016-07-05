@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"io"
@@ -68,8 +69,11 @@ func startCuratedAuthorsTransformer(bs *MockedBerthaService, mt *MockedTransform
 		authorsService: bs,
 		transformer:    mt,
 	}
-	h := setupServiceHandlers(ah)
-	curatedAuthorsTransformer = httptest.NewServer(h)
+	r := mux.NewRouter()
+	r.HandleFunc("/transformers/authors/__count", ah.getAuthorsCount).Methods("GET")
+	r.HandleFunc("/transformers/authors/__ids", ah.getAuthorsUuids).Methods("GET")
+	r.HandleFunc("/transformers/authors/{uuid}", ah.getAuthorByUuid).Methods("GET")
+	curatedAuthorsTransformer = httptest.NewServer(r)
 }
 
 func TestShouldReturn200AndAuthorsCount(t *testing.T) {

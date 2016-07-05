@@ -10,6 +10,7 @@ import (
 	"github.com/jawher/mow.cli"
 	"github.com/rcrowley/go-metrics"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 )
 
@@ -33,20 +34,23 @@ func main() {
 		log.Info("App started!!!")
 		bs := &berthaService{berthaUrl: *berthaSrcUrl}
 		ah := newAuthorHandler(bs)
-		h := setupServiceHandlers(ah)
 
-		log.Printf("listening on %d", *port)
-		http.ListenAndServe(fmt.Sprintf(":%d", *port),
-			httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry,
-				httphandlers.TransactionAwareRequestLoggingHandler(log.StandardLogger(), h)))
+		setupServiceHandlers(ah)
 
+		log.Infof("Listening on [%d].\n", *port)
+		err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
+		if err != nil {
+			log.Printf("Web server failed: [%v].\n", err)
+		}
 	}
 
 	app.Run(os.Args)
 }
 
-func setupServiceHandlers(ah authorHandler) (r *mux.Router) {
-	r = mux.NewRouter()
+func setupServiceHandlers(ah authorHandler) {
+	r := mux.NewRouter()
+	http.Handle("/", httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry,
+		httphandlers.TransactionAwareRequestLoggingHandler(log.StandardLogger(), r)))
 	r.HandleFunc(status.PingPath, status.PingHandler)
 	r.HandleFunc(status.PingPathDW, status.PingHandler)
 	r.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
