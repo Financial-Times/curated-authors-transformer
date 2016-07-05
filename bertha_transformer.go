@@ -12,21 +12,20 @@ type berthaTransformer struct {
 func (bt *berthaTransformer) authorToPerson(a author) (person, error) {
 	plainDescription, err := html2text.FromString(a.Biography)
 
-	id := identifier{
-		Authority:       tmeAuthority,
-		IdentifierValue: a.TmeIdentifier,
+	altIds := alternativeIdentifiers{
+		UUIDS: []string{a.Uuid},
+		TME:   []string{a.TmeIdentifier},
 	}
 
-	identifiers := []identifier{id}
 	p := person{
-		Uuid:           a.Uuid,
-		Name:           a.Name,
-		EmailAddress:   a.Email,
-		TwitterHandle:  a.TwitterHandle,
-		Description:    plainDescription,
-		DescriptionXML: a.Biography,
-		ImageUrl:       a.ImageUrl,
-		Identifiers:    identifiers,
+		Uuid:                   a.Uuid,
+		Name:                   a.Name,
+		EmailAddress:           a.Email,
+		TwitterHandle:          a.TwitterHandle,
+		Description:            plainDescription,
+		DescriptionXML:         a.Biography,
+		ImageUrl:               a.ImageUrl,
+		AlternativeIdentifiers: altIds,
 	}
 
 	return p, err

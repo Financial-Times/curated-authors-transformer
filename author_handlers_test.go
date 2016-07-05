@@ -18,17 +18,20 @@ var curatedAuthorsTransformer *httptest.Server
 var uuids = []string{martinWolf.Uuid, lucyKellaway.Uuid}
 var expectedStreamOutput = `{"id":"` + martinWolf.Uuid + `"} {"id":"` + lucyKellaway.Uuid + `"} `
 
-var martinWolfIdentifier = identifier{tmeAuthority, "Q0ItMDAwMDkwMA==-QXV0aG9ycw=="}
+var martinWolfAltIds = alternativeIdentifiers{
+	TME:   []string{martinWolf.TmeIdentifier},
+	UUIDS: []string{martinWolf.Uuid},
+}
 
 var transformedMartinWolf = person{
-	Uuid:           "daf5fed2-013c-468d-85c4-aee779b8aa53",
-	Name:           "Martin Wolf",
-	EmailAddress:   "martin.wolf@ft.com",
-	TwitterHandle:  "@martinwolf_",
-	Description:    "Martin Wolf is chief economics commentator at the Financial Times, London.",
-	DescriptionXML: `<p>Martin Wolf is chief economics commentator at the Financial Times, London.</p>`,
-	ImageUrl:       "https://next-geebee.ft.com/image/v1/images/raw/fthead:martin-wolf?source=next",
-	Identifiers:    []identifier{martinWolfIdentifier},
+	Uuid:                   "daf5fed2-013c-468d-85c4-aee779b8aa53",
+	Name:                   "Martin Wolf",
+	EmailAddress:           "martin.wolf@ft.com",
+	TwitterHandle:          "@martinwolf_",
+	Description:            "Martin Wolf is chief economics commentator at the Financial Times, London.",
+	DescriptionXML:         `<p>Martin Wolf is chief economics commentator at the Financial Times, London.</p>`,
+	ImageUrl:               "https://next-geebee.ft.com/image/v1/images/raw/fthead:martin-wolf?source=next",
+	AlternativeIdentifiers: martinWolfAltIds,
 }
 
 type MockedBerthaService struct {
