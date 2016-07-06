@@ -123,6 +123,17 @@ func TestShouldReturnEmptyAuthorWhenAuthorsCountIsNotCalled(t *testing.T) {
 	assert.Equal(t, author{}, a, "The author should be empty")
 }
 
+func TestShouldReturnEmptyAuthorWhenAuthorIsNotAvailable(t *testing.T) {
+	startBerthaMock("happy")
+	defer berthaMock.Close()
+	spreadSheetUrl := berthaMock.URL + berthaPath
+	bs := &berthaService{berthaUrl: spreadSheetUrl}
+
+	bs.getAuthorsCount()
+	a := bs.getAuthorByUuid("7f8bd61a-3575-4d32-a758-0fa41cbcc826")
+	assert.Equal(t, author{}, a, "The author should be empty")
+}
+
 func TestShouldReturnErrorWhenBerthaIsUnhappy(t *testing.T) {
 	startBerthaMock("unhappy")
 	defer berthaMock.Close()
