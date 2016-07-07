@@ -25,7 +25,7 @@ func main() {
 	})
 	berthaSrcUrl := app.String(cli.StringOpt{
 		Name:   "bertha-source-url",
-		Value:  "http://bertha.ig.ft.com/view/publish/gss/1wEdVRLtayZ6-XBfYM3vKAGaOV64cNJD3L8MlLM8-uFY/TestAuthors",
+		Value:  "{url}",
 		Desc:   "The URL of the Bertha Authors JSON source",
 		EnvVar: "BERTHA_SOURCE_URL",
 	})
