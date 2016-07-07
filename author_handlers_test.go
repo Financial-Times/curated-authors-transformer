@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"errors"
-	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"io"
@@ -69,11 +68,8 @@ func startCuratedAuthorsTransformer(bs *MockedBerthaService, mt *MockedTransform
 		authorsService: bs,
 		transformer:    mt,
 	}
-	r := mux.NewRouter()
-	r.HandleFunc("/transformers/authors/__count", ah.getAuthorsCount).Methods("GET")
-	r.HandleFunc("/transformers/authors/__ids", ah.getAuthorsUuids).Methods("GET")
-	r.HandleFunc("/transformers/authors/{uuid}", ah.getAuthorByUuid).Methods("GET")
-	curatedAuthorsTransformer = httptest.NewServer(r)
+	h := setupServiceHandlers(ah)
+	curatedAuthorsTransformer = httptest.NewServer(h)
 }
 
 func TestShouldReturn200AndAuthorsCount(t *testing.T) {
@@ -91,9 +87,9 @@ func TestShouldReturn200AndAuthorsCount(t *testing.T) {
 	defer resp.Body.Close()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "Response status should be 200")
-
+	assert.Equal(t, "text/plain; charset=utf-8", resp.Header.Get("Content-Type"), "Content-Type should be text/plain")
 	actualOutput := getStringFromReader(resp.Body)
-	assert.Equal(t, "2\n", actualOutput, "Response body should contain the count of available authors")
+	assert.Equal(t, "2", actualOutput, "Response body should contain the count of available authors")
 }
 
 func TestShouldReturn200AndAuthorsUuids(t *testing.T) {
@@ -111,7 +107,7 @@ func TestShouldReturn200AndAuthorsUuids(t *testing.T) {
 	defer resp.Body.Close()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "Response status should be 200")
-
+	assert.Equal(t, "text/plain; charset=utf-8", resp.Header.Get("Content-Type"), "Content-Type should be text/plain")
 	actualOutput := getStringFromReader(resp.Body)
 	assert.Equal(t, expectedStreamOutput, actualOutput, "Response body should be a sequence of ids")
 }
@@ -138,6 +134,7 @@ func TestShouldReturn200AndTrasformedAuthor(t *testing.T) {
 	defer resp.Body.Close()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "Response status should be 200")
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"), "Content-Type should be application/json")
 
 	file, _ := os.Open("test-resources/martin-wolf-transformed-output.json")
 	defer file.Close()

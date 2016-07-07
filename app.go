@@ -35,7 +35,10 @@ func main() {
 		bs := &berthaService{berthaUrl: *berthaSrcUrl}
 		ah := newAuthorHandler(bs)
 
-		setupServiceHandlers(ah)
+		h := setupServiceHandlers(ah)
+
+		http.Handle("/", httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry,
+			httphandlers.TransactionAwareRequestLoggingHandler(log.StandardLogger(), h)))
 
 		log.Infof("Listening on [%d].\n", *port)
 		err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
@@ -47,10 +50,9 @@ func main() {
 	app.Run(os.Args)
 }
 
-func setupServiceHandlers(ah authorHandler) {
+func setupServiceHandlers(ah authorHandler) http.Handler {
 	r := mux.NewRouter()
-	http.Handle("/", httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry,
-		httphandlers.TransactionAwareRequestLoggingHandler(log.StandardLogger(), r)))
+
 	r.HandleFunc(status.PingPath, status.PingHandler)
 	r.HandleFunc(status.PingPathDW, status.PingHandler)
 	r.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
@@ -62,5 +64,5 @@ func setupServiceHandlers(ah authorHandler) {
 	r.HandleFunc("/transformers/authors/__ids", ah.getAuthorsUuids).Methods("GET")
 	r.HandleFunc("/transformers/authors/{uuid}", ah.getAuthorByUuid).Methods("GET")
 
-	return
+	return r
 }
