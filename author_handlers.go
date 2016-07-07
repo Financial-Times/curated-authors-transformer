@@ -27,7 +27,9 @@ func (ah *authorHandler) getAuthorsCount(writer http.ResponseWriter, req *http.R
 	if err != nil {
 		writeJSONError(writer, err.Error(), http.StatusInternalServerError)
 	}
-	writeJSONResponse(c, true, writer)
+	var buffer bytes.Buffer
+	buffer.WriteString(fmt.Sprintf(`%v`, c))
+	buffer.WriteTo(writer)
 }
 
 func (ah *authorHandler) getAuthorsUuids(writer http.ResponseWriter, req *http.Request) {
@@ -94,11 +96,9 @@ func writeJSONError(w http.ResponseWriter, errorMsg string, statusCode int) {
 }
 
 func writeStreamResponse(ids []string, writer http.ResponseWriter) {
-	var buffer bytes.Buffer
-
 	for _, id := range ids {
+		var buffer bytes.Buffer
 		buffer.WriteString(fmt.Sprintf(`{"id":"%s"} `, id))
+		buffer.WriteTo(writer)
 	}
-
-	buffer.WriteTo(writer)
 }
