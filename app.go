@@ -58,7 +58,7 @@ func setupServiceHandlers(ah authorHandler) http.Handler {
 	r.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
 	r.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
 	r.HandleFunc("/__health", v1a.Handler("Curated Authors Transformer", "Checks for accessing Bertha", ah.HealthCheck()))
-	r.HandleFunc("/__gtg", ah.GoodToGo)
+	r.HandleFunc(status.GTGPath, ah.GoodToGo)
 
 	r.HandleFunc("/transformers/authors/__count", ah.getAuthorsCount).Methods("GET")
 	r.HandleFunc("/transformers/authors/__ids", ah.getAuthorsUuids).Methods("GET")
