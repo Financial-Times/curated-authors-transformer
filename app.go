@@ -25,7 +25,7 @@ func main() {
 	})
 	berthaSrcUrl := app.String(cli.StringOpt{
 		Name:   "bertha-source-url",
-		Value:  "http://bertha.ig.ft.com/view/publish/gss/1wEdVRLtayZ6-XBfYM3vKAGaOV64cNJD3L8MlLM8-uFY/TestAuthors",
+		Value:  "{url}",
 		Desc:   "The URL of the Bertha Authors JSON source",
 		EnvVar: "BERTHA_SOURCE_URL",
 	})
@@ -35,7 +35,10 @@ func main() {
 		bs := &berthaService{berthaUrl: *berthaSrcUrl}
 		ah := newAuthorHandler(bs)
 
-		setupServiceHandlers(ah)
+		h := setupServiceHandlers(ah)
+
+		http.Handle("/", httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry,
+			httphandlers.TransactionAwareRequestLoggingHandler(log.StandardLogger(), h)))
 
 		log.Infof("Listening on [%d].\n", *port)
 		err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
@@ -47,20 +50,19 @@ func main() {
 	app.Run(os.Args)
 }
 
-func setupServiceHandlers(ah authorHandler) {
+func setupServiceHandlers(ah authorHandler) http.Handler {
 	r := mux.NewRouter()
-	http.Handle("/", httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry,
-		httphandlers.TransactionAwareRequestLoggingHandler(log.StandardLogger(), r)))
+
 	r.HandleFunc(status.PingPath, status.PingHandler)
 	r.HandleFunc(status.PingPathDW, status.PingHandler)
 	r.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
 	r.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
-	r.HandleFunc("/__health", v1a.Handler("Topics Transformer Healthchecks", "Checks for accessing TME", ah.HealthCheck()))
-	r.HandleFunc("/__gtg", ah.GoodToGo)
+	r.HandleFunc("/__health", v1a.Handler("Curated Authors Transformer", "Checks for accessing Bertha", ah.HealthCheck()))
+	r.HandleFunc(status.GTGPath, ah.GoodToGo)
 
 	r.HandleFunc("/transformers/authors/__count", ah.getAuthorsCount).Methods("GET")
 	r.HandleFunc("/transformers/authors/__ids", ah.getAuthorsUuids).Methods("GET")
 	r.HandleFunc("/transformers/authors/{uuid}", ah.getAuthorByUuid).Methods("GET")
 
-	return
+	return r
 }
