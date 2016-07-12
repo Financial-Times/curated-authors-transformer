@@ -52,12 +52,14 @@ A response example is provided below.
 ```
 {
   "uuid": "daf5fed2-013c-468d-85c4-aee709b8aa53",
-  "identifiers": [
-    {
-      "authority": "http://api.ft.com/system/FT-TME",
-      "identifierValue": "Q0ItMDAwMDkwMA==-QXV0auiycw=="
-    }
-  ],
+  "alternativeIdentifiers": {
+    "TME": [
+      "Q0ItMDAwMDkwMA==-QXV0auiycw=="
+    ],
+    "uuids": [
+      "daf5fed2-013c-468d-85c4-aee779b8aa53"
+    ]
+  },
   "name": "Martin Wolf",
   "emailAddress": "author.email@domain.com",
   "twitterHandle": "@martinwolf_",
