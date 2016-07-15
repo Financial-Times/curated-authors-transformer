@@ -16,7 +16,7 @@ The service exposes endpoints for getting all the curated authors' UUIDs and for
 
 ```
 export|set PORT=8080
-export|set BERTHA_SOURCE_URL="http://bertha.ig.ft.com/view/publish/gss/1wEdVRLtayZ6-XBfYM3vKAGaOV64cNJD3L8MlLM8-uFY/TestAuthors"
+export|set BERTHA_SOURCE_URL="http://.../Authors"
 $GOPATH/bin/curated-authors-transformer
 ```
 
