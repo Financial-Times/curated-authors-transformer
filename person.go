@@ -5,6 +5,7 @@ type person struct {
 	BirthYear              int                    `json:"birthYear,omitempty"`
 	AlternativeIdentifiers alternativeIdentifiers `json:"alternativeIdentifiers"`
 	Name                   string                 `json:"name,omitempty"`
+	PrefLabel              string                 `json:"prefLabel"`
 	Salutation             string                 `json:"salutation,omitempty"`
 	Aliases                []string               `json:"aliases,omitempty"`
 	EmailAddress           string                 `json:"emailAddress,omitempty"`

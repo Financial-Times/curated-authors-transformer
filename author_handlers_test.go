@@ -25,6 +25,7 @@ var martinWolfAltIds = alternativeIdentifiers{
 var transformedMartinWolf = person{
 	Uuid:                   "daf5fed2-013c-468d-85c4-aee779b8aa53",
 	Name:                   "Martin Wolf",
+	PrefLabel:              "Martin Wolf",
 	EmailAddress:           "martin.wolf@ft.com",
 	TwitterHandle:          "@martinwolf_",
 	Description:            "Martin Wolf is chief economics commentator at the Financial Times, London.",
