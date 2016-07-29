@@ -26,6 +26,7 @@ var someAltIds = alternativeIdentifiers{
 var aPerson = person{
 	Uuid:                   "4a893fa2-e58b-4c28-aa12-4bb469cd7e57",
 	Name:                   "Eric Cartman",
+	PrefLabel:              "Eric Cartman",
 	EmailAddress:           "eric.cartman@southpark.cc.com",
 	TwitterHandle:          "@SouthPark",
 	Description:            aBio,
