@@ -61,6 +61,7 @@ A response example is provided below.
     ]
   },
   "name": "Martin Wolf",
+  "prefLabel": "Martin Wolf",
   "emailAddress": "author.email@domain.com",
   "twitterHandle": "@martinwolf_",
   "description": "Martin Wolf is chief economics commentator at the Financial Times, London. He was awarded the CBE (Commander of the British Empire) in 2000 “for services to financial journalism”",
