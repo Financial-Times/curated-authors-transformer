@@ -12,12 +12,21 @@ import (
 var client = httpcache.NewMemoryCacheTransport().Client()
 
 type berthaService struct {
-	berthaUrl  string
-	authorsMap map[string]author
+	berthaUrl   string
+	authorsMap  map[string]person
+	transformer transformer
+}
+
+func newBerthaService(url string) *berthaService {
+	return &berthaService{
+		berthaUrl:   url,
+		authorsMap:  map[string]person{},
+		transformer: &berthaTransformer{},
+	}
 }
 
 func (bs *berthaService) getAuthorsCount() (int, error) {
-	bs.authorsMap = make(map[string]author)
+	bs.authorsMap = make(map[string]person)
 
 	resp, err := bs.callBerthaService()
 	if err != nil {
@@ -32,7 +41,12 @@ func (bs *berthaService) getAuthorsCount() (int, error) {
 	}
 
 	for _, a := range authors {
-		bs.authorsMap[a.Uuid] = a
+		p, transErr := bs.transformer.authorToPerson(a)
+		if transErr != nil {
+			log.Error(err)
+			return -1, transErr
+		}
+		bs.authorsMap[p.Uuid] = p
 	}
 	return len(bs.authorsMap), nil
 }
@@ -45,7 +59,7 @@ func (bs *berthaService) getAuthorsUuids() []string {
 	return uuids
 }
 
-func (bs *berthaService) getAuthorByUuid(uuid string) author {
+func (bs *berthaService) getAuthorByUuid(uuid string) person {
 	return bs.authorsMap[uuid]
 }
 

@@ -32,7 +32,8 @@ func main() {
 
 	app.Action = func() {
 		log.Info("App started!!!")
-		bs := &berthaService{berthaUrl: *berthaSrcUrl}
+
+		bs := newBerthaService(*berthaSrcUrl)
 		ah := newAuthorHandler(bs)
 
 		h := setupServiceHandlers(ah)

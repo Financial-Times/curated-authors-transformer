@@ -7,6 +7,5 @@ type author struct {
 	ImageUrl      string `json:"imageurl"`
 	Biography     string `json:"biography"`
 	TwitterHandle string `json:"twitterhandle"`
-	Uuid          string `json:"uuid"`
 	TmeIdentifier string `json:"tmeidentifier"`
 }
