@@ -8,17 +8,16 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"net/http"
+	"reflect"
 )
 
 type authorHandler struct {
 	authorsService authorsService
-	transformer    transformer
 }
 
 func newAuthorHandler(as authorsService) authorHandler {
 	return authorHandler{
 		authorsService: as,
-		transformer:    &berthaTransformer{},
 	}
 }
 
@@ -43,11 +42,7 @@ func (ah *authorHandler) getAuthorByUuid(writer http.ResponseWriter, req *http.R
 	uuid := vars["uuid"]
 
 	a := ah.authorsService.getAuthorByUuid(uuid)
-	p, err := ah.transformer.authorToPerson(a)
-	if err != nil {
-		writeJSONError(writer, err.Error(), http.StatusInternalServerError)
-	}
-	writeJSONResponse(p, a != author{}, writer)
+	writeJSONResponse(a, !reflect.DeepEqual(a, person{}), writer)
 }
 
 func (ah *authorHandler) HealthCheck() v1a.Check {

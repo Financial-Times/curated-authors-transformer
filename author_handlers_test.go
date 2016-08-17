@@ -13,26 +13,7 @@ import (
 )
 
 var curatedAuthorsTransformer *httptest.Server
-
-var uuids = []string{martinWolf.Uuid, lucyKellaway.Uuid}
-var expectedStreamOutput = `{"id":"` + martinWolf.Uuid + `"} {"id":"` + lucyKellaway.Uuid + `"} `
-
-var martinWolfAltIds = alternativeIdentifiers{
-	TME:   []string{martinWolf.TmeIdentifier},
-	UUIDS: []string{martinWolf.Uuid},
-}
-
-var transformedMartinWolf = person{
-	Uuid:                   "daf5fed2-013c-468d-85c4-aee779b8aa53",
-	Name:                   "Martin Wolf",
-	PrefLabel:              "Martin Wolf",
-	EmailAddress:           "martin.wolf@ft.com",
-	TwitterHandle:          "@martinwolf_",
-	Description:            "Martin Wolf is chief economics commentator at the Financial Times, London.",
-	DescriptionXML:         `<p>Martin Wolf is chief economics commentator at the Financial Times, London.</p>`,
-	ImageUrl:               "https://next-geebee.ft.com/image/v1/images/raw/fthead:martin-wolf?source=next",
-	AlternativeIdentifiers: martinWolfAltIds,
-}
+var expectedStreamOutput = `{"id":"` + martinWolfUuid + `"} {"id":"` + lucyKellawayUuid + `"} `
 
 type MockedBerthaService struct {
 	mock.Mock
@@ -43,9 +24,9 @@ func (m *MockedBerthaService) getAuthorsUuids() []string {
 	return args.Get(0).([]string)
 }
 
-func (m *MockedBerthaService) getAuthorByUuid(uuid string) author {
+func (m *MockedBerthaService) getAuthorByUuid(uuid string) person {
 	args := m.Called(uuid)
-	return args.Get(0).(author)
+	return args.Get(0).(person)
 }
 
 func (m *MockedBerthaService) getAuthorsCount() (int, error) {
@@ -58,30 +39,18 @@ func (m *MockedBerthaService) checkConnectivity() error {
 	return args.Error(0)
 }
 
-type MockedTransformer struct {
-	mock.Mock
-}
-
-func (m *MockedTransformer) authorToPerson(a author) (person, error) {
-	args := m.Called(a)
-	return args.Get(0).(person), args.Error(1)
-}
-
-func startCuratedAuthorsTransformer(bs *MockedBerthaService, mt *MockedTransformer) {
+func startCuratedAuthorsTransformer(bs *MockedBerthaService) {
 	ah := authorHandler{
 		authorsService: bs,
-		transformer:    mt,
 	}
 	h := setupServiceHandlers(ah)
 	curatedAuthorsTransformer = httptest.NewServer(h)
 }
 
 func TestShouldReturn200AndAuthorsCount(t *testing.T) {
-
 	mbs := new(MockedBerthaService)
 	mbs.On("getAuthorsCount").Return(2, nil)
-	mt := new(MockedTransformer)
-	startCuratedAuthorsTransformer(mbs, mt)
+	startCuratedAuthorsTransformer(mbs)
 	defer curatedAuthorsTransformer.Close()
 
 	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/__count")
@@ -97,11 +66,9 @@ func TestShouldReturn200AndAuthorsCount(t *testing.T) {
 }
 
 func TestShouldReturn200AndAuthorsUuids(t *testing.T) {
-
 	mbs := new(MockedBerthaService)
 	mbs.On("getAuthorsUuids").Return(uuids)
-	mt := new(MockedTransformer)
-	startCuratedAuthorsTransformer(mbs, mt)
+	startCuratedAuthorsTransformer(mbs)
 	defer curatedAuthorsTransformer.Close()
 
 	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/__ids")
@@ -125,13 +92,11 @@ func getStringFromReader(r io.Reader) string {
 func TestShouldReturn200AndTrasformedAuthor(t *testing.T) {
 
 	mbs := new(MockedBerthaService)
-	mbs.On("getAuthorByUuid", martinWolf.Uuid).Return(martinWolf)
-	mt := new(MockedTransformer)
-	mt.On("authorToPerson", martinWolf).Return(transformedMartinWolf, nil)
-	startCuratedAuthorsTransformer(mbs, mt)
+	mbs.On("getAuthorByUuid", martinWolfUuid).Return(transformedMartinWolf)
+	startCuratedAuthorsTransformer(mbs)
 	defer curatedAuthorsTransformer.Close()
 
-	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/" + martinWolf.Uuid)
+	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/" + martinWolfUuid)
 	if err != nil {
 		panic(err)
 	}
@@ -151,13 +116,11 @@ func TestShouldReturn200AndTrasformedAuthor(t *testing.T) {
 
 func TestShouldReturn404WhenAuthorIsNotFound(t *testing.T) {
 	mbs := new(MockedBerthaService)
-	mbs.On("getAuthorByUuid", martinWolf.Uuid).Return(author{})
-	mt := new(MockedTransformer)
-	mt.On("authorToPerson", author{}).Return(person{}, nil)
-	startCuratedAuthorsTransformer(mbs, mt)
+	mbs.On("getAuthorByUuid", martinWolfUuid).Return(person{})
+	startCuratedAuthorsTransformer(mbs)
 	defer curatedAuthorsTransformer.Close()
 
-	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/" + martinWolf.Uuid)
+	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/" + martinWolfUuid)
 	if err != nil {
 		panic(err)
 	}
@@ -169,28 +132,10 @@ func TestShouldReturn404WhenAuthorIsNotFound(t *testing.T) {
 func TestShouldReturn500WhenBerthaReturnsError(t *testing.T) {
 	mbs := new(MockedBerthaService)
 	mbs.On("getAuthorsCount").Return(-1, errors.New("I am a zobie"))
-	mt := new(MockedTransformer)
-	startCuratedAuthorsTransformer(mbs, mt)
+	startCuratedAuthorsTransformer(mbs)
 	defer curatedAuthorsTransformer.Close()
 
 	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/__count")
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode, "Response status should be 500")
-}
-
-func TestShouldReturn500WhenTransformerReturnsError(t *testing.T) {
-	mbs := new(MockedBerthaService)
-	mbs.On("getAuthorByUuid", martinWolf.Uuid).Return(martinWolf)
-	mt := new(MockedTransformer)
-	mt.On("authorToPerson", martinWolf).Return(person{}, errors.New("I hate Luca!!!"))
-	startCuratedAuthorsTransformer(mbs, mt)
-	defer curatedAuthorsTransformer.Close()
-
-	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/" + martinWolf.Uuid)
 	if err != nil {
 		panic(err)
 	}
