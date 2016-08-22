@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"io"
@@ -19,6 +18,11 @@ type MockedBerthaService struct {
 	mock.Mock
 }
 
+func (m *MockedBerthaService) refreshCache() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
 func (m *MockedBerthaService) getAuthorsUuids() []string {
 	args := m.Called()
 	return args.Get(0).([]string)
@@ -29,9 +33,9 @@ func (m *MockedBerthaService) getAuthorByUuid(uuid string) person {
 	return args.Get(0).(person)
 }
 
-func (m *MockedBerthaService) getAuthorsCount() (int, error) {
+func (m *MockedBerthaService) getAuthorsCount() int {
 	args := m.Called()
-	return args.Int(0), args.Error(1)
+	return args.Int(0)
 }
 
 func (m *MockedBerthaService) checkConnectivity() error {
@@ -40,16 +44,14 @@ func (m *MockedBerthaService) checkConnectivity() error {
 }
 
 func startCuratedAuthorsTransformer(bs *MockedBerthaService) {
-	ah := authorHandler{
-		authorsService: bs,
-	}
+	ah := newAuthorHandler(bs)
 	h := setupServiceHandlers(ah)
 	curatedAuthorsTransformer = httptest.NewServer(h)
 }
 
 func TestShouldReturn200AndAuthorsCount(t *testing.T) {
 	mbs := new(MockedBerthaService)
-	mbs.On("getAuthorsCount").Return(2, nil)
+	mbs.On("getAuthorsCount").Return(2)
 	startCuratedAuthorsTransformer(mbs)
 	defer curatedAuthorsTransformer.Close()
 
@@ -127,19 +129,4 @@ func TestShouldReturn404WhenAuthorIsNotFound(t *testing.T) {
 	defer resp.Body.Close()
 
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode, "Response status should be 404")
-}
-
-func TestShouldReturn500WhenBerthaReturnsError(t *testing.T) {
-	mbs := new(MockedBerthaService)
-	mbs.On("getAuthorsCount").Return(-1, errors.New("I am a zobie"))
-	startCuratedAuthorsTransformer(mbs)
-	defer curatedAuthorsTransformer.Close()
-
-	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/__count")
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode, "Response status should be 500")
 }

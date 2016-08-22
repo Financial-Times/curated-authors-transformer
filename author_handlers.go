@@ -22,14 +22,10 @@ func newAuthorHandler(as authorsService) authorHandler {
 }
 
 func (ah *authorHandler) getAuthorsCount(writer http.ResponseWriter, req *http.Request) {
-	c, err := ah.authorsService.getAuthorsCount()
-	if err != nil {
-		writeJSONError(writer, err.Error(), http.StatusInternalServerError)
-	} else {
-		var buffer bytes.Buffer
-		buffer.WriteString(fmt.Sprintf(`%v`, c))
-		buffer.WriteTo(writer)
-	}
+	c := ah.authorsService.getAuthorsCount()
+	var buffer bytes.Buffer
+	buffer.WriteString(fmt.Sprintf(`%v`, c))
+	buffer.WriteTo(writer)
 }
 
 func (ah *authorHandler) getAuthorsUuids(writer http.ResponseWriter, req *http.Request) {

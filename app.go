@@ -33,7 +33,13 @@ func main() {
 	app.Action = func() {
 		log.Info("App started!!!")
 
-		bs := newBerthaService(*berthaSrcUrl)
+		bs, err := newBerthaService(*berthaSrcUrl)
+
+		if err != nil {
+			log.Error(err)
+			panic(err)
+		}
+
 		ah := newAuthorHandler(bs)
 
 		h := setupServiceHandlers(ah)
@@ -42,9 +48,9 @@ func main() {
 			httphandlers.TransactionAwareRequestLoggingHandler(log.StandardLogger(), h)))
 
 		log.Infof("Listening on [%d].\n", *port)
-		err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
-		if err != nil {
-			log.Printf("Web server failed: [%v].\n", err)
+		errServe := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
+		if errServe != nil {
+			log.Printf("Web server failed: [%v].\n", errServe)
 		}
 	}
 
