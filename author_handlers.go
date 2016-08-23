@@ -21,11 +21,25 @@ func newAuthorHandler(as authorsService) authorHandler {
 	}
 }
 
+func (ah *authorHandler) refreshCache(writer http.ResponseWriter, req *http.Request) {
+	err := ah.authorsService.refreshCache()
+	if err != nil {
+		writeJSONMessage(writer, err.Error(), http.StatusInternalServerError)
+	} else {
+		writeJSONMessage(writer, "Authors fetched", http.StatusOK)
+	}
+}
+
 func (ah *authorHandler) getAuthorsCount(writer http.ResponseWriter, req *http.Request) {
-	c := ah.authorsService.getAuthorsCount()
-	var buffer bytes.Buffer
-	buffer.WriteString(fmt.Sprintf(`%v`, c))
-	buffer.WriteTo(writer)
+	err := ah.authorsService.refreshCache()
+	if err != nil {
+		writeJSONMessage(writer, err.Error(), http.StatusInternalServerError)
+	} else {
+		c := ah.authorsService.getAuthorsCount()
+		var buffer bytes.Buffer
+		buffer.WriteString(fmt.Sprintf(`%v`, c))
+		buffer.WriteTo(writer)
+	}
 }
 
 func (ah *authorHandler) getAuthorsUuids(writer http.ResponseWriter, req *http.Request) {
@@ -77,12 +91,13 @@ func writeJSONResponse(obj interface{}, found bool, writer http.ResponseWriter) 
 	enc := json.NewEncoder(writer)
 	if err := enc.Encode(obj); err != nil {
 		log.Errorf("Error on json encoding=%v\n", err)
-		writeJSONError(writer, err.Error(), http.StatusInternalServerError)
+		writeJSONMessage(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-func writeJSONError(w http.ResponseWriter, errorMsg string, statusCode int) {
+func writeJSONMessage(w http.ResponseWriter, errorMsg string, statusCode int) {
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	fmt.Fprintln(w, fmt.Sprintf("{\"message\": \"%s\"}", errorMsg))
 }
