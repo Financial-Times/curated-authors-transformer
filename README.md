@@ -28,9 +28,13 @@ $GOPATH/bin/curated-authors-transformer
 
 #Endpoints
 
+##Refresh Cache
+`POST /transformers/authors` with empty request message refreshes the transformer cache.
+The transformer loads Bertha data in memory at startup time by default. Every time a POST triggers this endpoint, the transformer refetches Bertha data.
+
 ##Count
 `GET /transformers/authors/__count` returns the number of available authors to be transformed as plain text.
-A response example is provided below.
+A response example is provided below. Calling this endpoint will trigger refresh of the transformer cache. 
 
 ```
 2
