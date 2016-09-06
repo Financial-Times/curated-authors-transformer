@@ -77,11 +77,9 @@ func TestShouldReturn500WhenAuthorsCountIsCalledAndCacheRefreshFails(t *testing.
 	defer curatedAuthorsTransformer.Close()
 
 	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/__count")
-	if err != nil {
-		panic(err)
-	}
 	defer resp.Body.Close()
 
+	assert.Nil(t, err)
 	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode, "Response status should be 500")
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"), "Content-Type should be application/json")
 	actualOutput := getStringFromReader(resp.Body)
@@ -95,11 +93,9 @@ func TestShouldReturn200AndAuthorsUuids(t *testing.T) {
 	defer curatedAuthorsTransformer.Close()
 
 	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/__ids")
-	if err != nil {
-		panic(err)
-	}
 	defer resp.Body.Close()
 
+	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "Response status should be 200")
 	assert.Equal(t, "text/plain; charset=utf-8", resp.Header.Get("Content-Type"), "Content-Type should be text/plain")
 	actualOutput := getStringFromReader(resp.Body)
@@ -120,11 +116,9 @@ func TestShouldReturn200AndTrasformedAuthor(t *testing.T) {
 	defer curatedAuthorsTransformer.Close()
 
 	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/" + martinWolfUuid)
-	if err != nil {
-		panic(err)
-	}
 	defer resp.Body.Close()
 
+	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "Response status should be 200")
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"), "Content-Type should be application/json")
 
@@ -144,10 +138,8 @@ func TestShouldReturn404WhenAuthorIsNotFound(t *testing.T) {
 	defer curatedAuthorsTransformer.Close()
 
 	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/" + martinWolfUuid)
-	if err != nil {
-		panic(err)
-	}
 	defer resp.Body.Close()
 
+	assert.Nil(t, err)
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode, "Response status should be 404")
 }
