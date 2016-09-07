@@ -19,6 +19,11 @@ type MockedBerthaService struct {
 	mock.Mock
 }
 
+func (m *MockedBerthaService) refreshCache() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
 func (m *MockedBerthaService) getAuthorsUuids() []string {
 	args := m.Called()
 	return args.Get(0).([]string)
@@ -29,9 +34,9 @@ func (m *MockedBerthaService) getAuthorByUuid(uuid string) person {
 	return args.Get(0).(person)
 }
 
-func (m *MockedBerthaService) getAuthorsCount() (int, error) {
+func (m *MockedBerthaService) getAuthorsCount() int {
 	args := m.Called()
-	return args.Int(0), args.Error(1)
+	return args.Int(0)
 }
 
 func (m *MockedBerthaService) checkConnectivity() error {
@@ -40,16 +45,15 @@ func (m *MockedBerthaService) checkConnectivity() error {
 }
 
 func startCuratedAuthorsTransformer(bs *MockedBerthaService) {
-	ah := authorHandler{
-		authorsService: bs,
-	}
+	ah := newAuthorHandler(bs)
 	h := setupServiceHandlers(ah)
 	curatedAuthorsTransformer = httptest.NewServer(h)
 }
 
 func TestShouldReturn200AndAuthorsCount(t *testing.T) {
 	mbs := new(MockedBerthaService)
-	mbs.On("getAuthorsCount").Return(2, nil)
+	mbs.On("getAuthorsCount").Return(2)
+	mbs.On("refreshCache").Return(nil)
 	startCuratedAuthorsTransformer(mbs)
 	defer curatedAuthorsTransformer.Close()
 
@@ -65,6 +69,23 @@ func TestShouldReturn200AndAuthorsCount(t *testing.T) {
 	assert.Equal(t, "2", actualOutput, "Response body should contain the count of available authors")
 }
 
+func TestShouldReturn500WhenAuthorsCountIsCalledAndCacheRefreshFails(t *testing.T) {
+	mbs := new(MockedBerthaService)
+	mbs.On("getAuthorsCount").Return(2)
+	mbs.On("refreshCache").Return(errors.New("I hate Luca!"))
+	startCuratedAuthorsTransformer(mbs)
+	defer curatedAuthorsTransformer.Close()
+
+	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/__count")
+	defer resp.Body.Close()
+
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode, "Response status should be 500")
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"), "Content-Type should be application/json")
+	actualOutput := getStringFromReader(resp.Body)
+	assert.Equal(t, "{\"message\": \"I hate Luca!\"}\n", actualOutput, "Response body should contain the error message as JSON")
+}
+
 func TestShouldReturn200AndAuthorsUuids(t *testing.T) {
 	mbs := new(MockedBerthaService)
 	mbs.On("getAuthorsUuids").Return(uuids)
@@ -72,11 +93,9 @@ func TestShouldReturn200AndAuthorsUuids(t *testing.T) {
 	defer curatedAuthorsTransformer.Close()
 
 	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/__ids")
-	if err != nil {
-		panic(err)
-	}
 	defer resp.Body.Close()
 
+	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "Response status should be 200")
 	assert.Equal(t, "text/plain; charset=utf-8", resp.Header.Get("Content-Type"), "Content-Type should be text/plain")
 	actualOutput := getStringFromReader(resp.Body)
@@ -97,11 +116,9 @@ func TestShouldReturn200AndTrasformedAuthor(t *testing.T) {
 	defer curatedAuthorsTransformer.Close()
 
 	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/" + martinWolfUuid)
-	if err != nil {
-		panic(err)
-	}
 	defer resp.Body.Close()
 
+	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "Response status should be 200")
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"), "Content-Type should be application/json")
 
@@ -121,25 +138,8 @@ func TestShouldReturn404WhenAuthorIsNotFound(t *testing.T) {
 	defer curatedAuthorsTransformer.Close()
 
 	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/" + martinWolfUuid)
-	if err != nil {
-		panic(err)
-	}
 	defer resp.Body.Close()
 
+	assert.Nil(t, err)
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode, "Response status should be 404")
-}
-
-func TestShouldReturn500WhenBerthaReturnsError(t *testing.T) {
-	mbs := new(MockedBerthaService)
-	mbs.On("getAuthorsCount").Return(-1, errors.New("I am a zobie"))
-	startCuratedAuthorsTransformer(mbs)
-	defer curatedAuthorsTransformer.Close()
-
-	resp, err := http.Get(curatedAuthorsTransformer.URL + "/transformers/authors/__count")
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode, "Response status should be 500")
 }
