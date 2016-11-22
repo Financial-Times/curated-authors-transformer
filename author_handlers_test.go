@@ -3,13 +3,14 @@ package main
 import (
 	"bytes"
 	"errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 var curatedAuthorsTransformer *httptest.Server
@@ -88,7 +89,7 @@ func TestShouldReturn500WhenAuthorsCountIsCalledAndCacheRefreshFails(t *testing.
 
 func TestShouldReturn200AndAuthorsUuids(t *testing.T) {
 	mbs := new(MockedBerthaService)
-	mbs.On("getAuthorsUuids").Return(uuids)
+	mbs.On("getAuthorsUuids").Return(expectedUuids)
 	startCuratedAuthorsTransformer(mbs)
 	defer curatedAuthorsTransformer.Close()
 

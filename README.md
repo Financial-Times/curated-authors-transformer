@@ -8,7 +8,7 @@ The service exposes endpoints for getting all the curated authors' UUIDs and for
 
 # How to run
 
-## Locally: 
+## Locally:
 
 `go get github.com/Financial-Times/curated-authors-transformer`
 
@@ -34,23 +34,23 @@ The transformer loads Bertha data in memory at startup time by default. Every ti
 
 ##Count
 `GET /transformers/authors/__count` returns the number of available authors to be transformed as plain text.
-A response example is provided below. Calling this endpoint will trigger refresh of the transformer cache. 
+A response example is provided below. Calling this endpoint will trigger refresh of the transformer cache.
 
 ```
 2
 ```
 
 ##IDs
-`GET /transformers/authors/__ids` returns the list of author's UUIDs available to be transformed. 
+`GET /transformers/authors/__ids` returns the list of author's UUIDs available to be transformed.
 The output is a sequence of JSON objects, however the returned `Content-Type` header is `text\plain`.
 A response example is provided below.
 
 ```
-{"id":"5baaf5a4-2d9f-11e6-a100-1316a778acd2"} {"id":"5baaf5a4-2d9f-11e6-a100-1316a778acd5"} {"id":"5baaf5a4-2d9f-11e6-a100-1316a778acd9"} {"id":"5baaf5a4-2d9f-11e6-a100-1316a778acd8"} {"id":"5baaf5a4-2d9f-11e6-a100-1316a778acd0"} {"id":"daf5fed2-013c-468d-85c4-aee779b8aa53"} {"id":"daf5fed2-013c-468d-85c4-aee779b8aa51"} 
+{"id":"5baaf5a4-2d9f-11e6-a100-1316a778acd2"} {"id":"5baaf5a4-2d9f-11e6-a100-1316a778acd5"} {"id":"5baaf5a4-2d9f-11e6-a100-1316a778acd9"} {"id":"5baaf5a4-2d9f-11e6-a100-1316a778acd8"} {"id":"5baaf5a4-2d9f-11e6-a100-1316a778acd0"} {"id":"daf5fed2-013c-468d-85c4-aee779b8aa53"} {"id":"daf5fed2-013c-468d-85c4-aee779b8aa51"}
 ```
 
 ##Authors by UUID
-`GET /transformers/authors/{uuid}` returns author data of the given uuid. 
+`GET /transformers/authors/{uuid}` returns author data of the given uuid.
 A response example is provided below.
 
 ```
@@ -68,6 +68,8 @@ A response example is provided below.
   "prefLabel": "Martin Wolf",
   "emailAddress": "author.email@domain.com",
   "twitterHandle": "@martinwolf_",
+  "facebookProfile": "martin-wolf",
+  "linekdinProfile": "martin-wolf-123",
   "description": "Martin Wolf is chief economics commentator at the Financial Times, London. He was awarded the CBE (Commander of the British Empire) in 2000 “for services to financial journalism”",
   "descriptionXML": "<p>Martin Wolf is chief economics commentator at the Financial Times, London. He was awarded the CBE (Commander of the British Empire) in 2000 “for services to financial journalism”</p>",
   "_imageUrl": "https://example.site.com/image/martin-wolf.png"

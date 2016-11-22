@@ -3,7 +3,7 @@ package main
 var martinWolfUuid = "0f07d468-fc37-3c44-bf19-a81f2aae9f36"
 var lucyKellawayUuid = "8f9ac45f-2cc2-35f7-83f4-579c66a09eb0"
 
-var uuids = []string{martinWolfUuid, lucyKellawayUuid}
+var expectedUuids = []string{martinWolfUuid, lucyKellawayUuid}
 
 var martinWolf = author{
 	Name:          "Martin Wolf",

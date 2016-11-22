@@ -29,6 +29,8 @@ func (bt *berthaTransformer) authorToPerson(a author) (person, error) {
 		PrefLabel:              a.Name,
 		EmailAddress:           a.Email,
 		TwitterHandle:          a.TwitterHandle,
+		FacebookProfile:        a.FacebookProfile,
+		LinkedinProfile:        a.LinkedinProfile,
 		Description:            plainDescription,
 		DescriptionXML:         a.Biography,
 		ImageUrl:               a.ImageUrl,
