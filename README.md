@@ -1,5 +1,7 @@
 # curated-authors-transformer
 
+# THIS SERVICE HAS BEEN DECOMMISSIONED!
+
 [![CircleCI](https://circleci.com/gh/Financial-Times/curated-authors-transformer.svg?style=svg)](https://circleci.com/gh/Financial-Times/curated-authors-transformer)
 
 Retrieves author data curated by editorial people and transforms it to People according to UP JSON model.
